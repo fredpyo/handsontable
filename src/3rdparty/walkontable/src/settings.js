@@ -38,6 +38,10 @@ class WalkontableSettings {
       columnHeaders: function() {
         return [];
       },
+      // this must be array of functions: [function (column, TH) {}]
+      columnFooters: function() {
+        return [];
+      },
       totalRows: void 0,
       totalColumns: void 0,
       cellRenderer: (row, column, TD) => {

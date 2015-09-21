@@ -34,6 +34,8 @@ function TableView(instance) {
   table.className = 'htCore';
   this.THEAD = document.createElement('THEAD');
   table.appendChild(this.THEAD);
+  this.TFOOT = document.createElement('TFOOT');
+  table.appendChild(this.TFOOT);
   this.TBODY = document.createElement('TBODY');
   table.appendChild(this.TBODY);
 
@@ -221,6 +223,17 @@ function TableView(instance) {
         });
       }
       Handsontable.hooks.run(instance, 'afterGetColumnHeaderRenderers', arr);
+      return arr;
+    },
+    columnFooters: function() {
+
+      var arr = [];
+      if (instance.hasColFooters()) {
+        arr.push(function(index, TH) {
+          that.appendColFooter(index, TH);
+        });
+      }
+      Handsontable.hooks.run(instance, 'afterGetColumnFooterRenderers', arr);
       return arr;
     },
     columnWidth: instance.getColWidth,
@@ -534,6 +547,37 @@ TableView.prototype.appendColHeader = function(col, TH) {
     TH.appendChild(div);
   }
   Handsontable.hooks.run(this.instance, 'afterGetColHeader', col, TH);
+};
+
+/**
+ * Append column header to a TH element
+ * @param col
+ * @param TH
+ */
+TableView.prototype.appendColFooter = function(col, TH) {
+  if (TH.firstChild) {
+    let container = TH.firstChild;
+
+    if (!dom.hasClass(container, 'relative')) {
+      dom.empty(TH);
+      this.appendRowHeader(col, TH);
+
+      return;
+    }
+    this.updateCellHeader(container.firstChild, col, this.instance.getColFooter);
+
+  } else {
+    var div = document.createElement('div');
+    let span = document.createElement('span');
+
+    div.className = 'relative';
+    span.className = 'footHeader';
+    this.updateCellHeader(span, col, this.instance.getColFooter);
+
+    div.appendChild(span);
+    TH.appendChild(div);
+  }
+  Handsontable.hooks.run(this.instance, 'afterGetColFooter', col, TH);
 };
 
 /**

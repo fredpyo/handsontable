@@ -2102,6 +2102,26 @@ Handsontable.Core = function Core(rootElement, userSettings) {
   };
 
   /**
+   * Returns information of this table is configured to display column footers.
+   *
+   * @memberof Core#
+   * @function hasColFooters
+   * @since 0.16
+   * @returns {Boolean}
+   */
+  this.hasColFooters = function() {
+    if (priv.settings.colFooters !== void 0 && priv.settings.colFooters !== null) { //Polymer has empty value = null
+      return !!priv.settings.colFooters;
+    }
+    for (var i = 0, ilen = instance.countCols(); i < ilen; i++) {
+      if (instance.getColFooter(i)) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  /**
    * Return array of column headers (if they are enabled). If param `col` given, return header at given column as string
    *
    * @memberof Core#
@@ -2172,6 +2192,37 @@ Handsontable.Core = function Core(rootElement, userSettings) {
     }
 
     return width;
+  };
+
+  this.getColFooter = function (col) {
+    if (col === void 0) {
+      var out = [];
+      for (var i = 0, ilen = instance.countCols(); i < ilen; i++) {
+        out.push(instance.getColFooter(i));
+      }
+      return out;
+    }
+    else {
+      var baseCol = col;
+
+      col = Handsontable.hooks.run(instance, 'modifyCol', col);
+
+      if (priv.settings.columns && priv.settings.columns[col] && priv.settings.columns[col].footer) {
+        return priv.settings.columns[col].footer;
+      }
+      else if (Array.isArray(priv.settings.colFooters) && priv.settings.colFooters[col] !== void 0) {
+        return priv.settings.colFooters[col];
+      }
+      else if (typeof priv.settings.colFooters === 'function') {
+        return priv.settings.colFooters(col);
+      }
+      else if (priv.settings.colFooters && typeof priv.settings.colFooters !== 'string' && typeof priv.settings.colFooters !== 'number') {
+        return helper.spreadsheetColumnLabel(baseCol); //see #1458
+      }
+      else {
+        return priv.settings.colFooters;
+      }
+    }
   };
 
   /**
@@ -2919,6 +2970,35 @@ DefaultSettings.prototype = {
    * ```
    */
   colHeaders: null,
+
+  /**
+   * Setting `true` or `false` will enable or disable the default column headers (A, B, C).
+   * You can also define an array `['One', 'Two', 'Three', ...]` or a function to define the headers.
+   * If a function is set the index of the column is passed as a parameter.
+   *
+   * @type {Boolean|Array|Function}
+   * @default null
+   * @example
+   * ```js
+   * ...
+   * // as boolean
+   * colHeaders: true,
+   * ...
+   *
+   * ...
+   * // as array
+   * colHeaders: ['A', 'B', 'C'],
+   * ...
+   *
+   * ...
+   * // as function
+   * colHeaders: function(index) {
+   *   return index + ': AB';
+   * },
+   * ...
+   * ```
+   */
+  colFooters: null,
 
   /**
    * Defines column widths in pixels. Accepts number, string (that will be converted to number),

@@ -61,6 +61,12 @@ class WalkontableTable {
       this.THEAD = document.createElement('thead');
       this.TABLE.insertBefore(this.THEAD, this.TBODY);
     }
+    this.TFOOT = this.TABLE.querySelector('tfoot');
+
+    if (!this.TFOOT) {
+      this.TFOOT = document.createElement('tfoot');
+      this.TABLE.insertBefore(this.TFOOT, this.TBODY);
+    }
     this.COLGROUP = this.TABLE.querySelector('colgroup');
 
     if (!this.COLGROUP) {
@@ -70,6 +76,10 @@ class WalkontableTable {
 
     if (this.wot.getSetting('columnHeaders').length && !this.THEAD.childNodes.length) {
       this.THEAD.appendChild(document.createElement('TR'));
+    }
+
+    if (this.wot.getSetting('columnFooters').length && !this.TFOOT.childNodes.length) {
+      this.TFOOT.appendChild(document.createElement('TR'));
     }
   }
 

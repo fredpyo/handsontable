@@ -139,6 +139,10 @@
   border-top: 1px solid #CCC;
 }
 
+.handsontable tfoot tr th {
+  border-top: none !important;
+}
+
 .ht_master:not(.innerBorderLeft) ~ .handsontable tbody tr th,
 .ht_master:not(.innerBorderLeft) ~ .handsontable:not(.ht_clone_top) thead tr th:first-child
 {

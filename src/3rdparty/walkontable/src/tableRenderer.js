@@ -21,12 +21,14 @@ class WalkontableTableRenderer {
 
     this.TABLE = wtTable.TABLE;
     this.THEAD = wtTable.THEAD;
+    this.TFOOT = wtTable.TFOOT;
     this.TBODY = wtTable.TBODY;
     this.COLGROUP = wtTable.COLGROUP;
 
     this.rowHeaders = [];
     this.rowHeaderCount = 0;
     this.columnHeaders = [];
+    this.columnFooters = [];
     this.columnHeaderCount = 0;
     this.fixedRowsTop = 0;
   }
@@ -43,7 +45,9 @@ class WalkontableTableRenderer {
     this.rowHeaderCount = this.rowHeaders.length;
     this.fixedRowsTop = this.wot.getSetting('fixedRowsTop');
     this.columnHeaders = this.wot.getSetting('columnHeaders');
+    this.columnFooters = this.wot.getSetting('columnFooters');
     this.columnHeaderCount = this.columnHeaders.length;
+    this.columnFooterCount = this.columnFooters.length;
 
     let columnsToRender = this.wtTable.getRenderedColumnsCount();
     let rowsToRender = this.wtTable.getRenderedRowsCount();
@@ -59,6 +63,8 @@ class WalkontableTableRenderer {
 
       // adjust column widths according to user widths settings
       this.renderColumnHeaders();
+      // this is a waste of resources, but the footers are finally deleted on the removeRedundantRows method
+      this.renderColumnFooters();
 
       //Render table rows
       this.renderRows(totalRows, rowsToRender, columnsToRender);
@@ -110,6 +116,12 @@ class WalkontableTableRenderer {
     while (this.wtTable.tbodyChildrenLength > renderedRowsCount) {
       this.TBODY.removeChild(this.TBODY.lastChild);
       this.wtTable.tbodyChildrenLength--;
+    }
+    if (renderedRowsCount === 0) {
+      while (this.TFOOT.lastChild) {
+        this.TFOOT.removeChild(this.TFOOT.lastChild);
+      }
+
     }
   }
 
@@ -419,6 +431,7 @@ class WalkontableTableRenderer {
   adjustAvailableNodes() {
     this.adjustColGroups();
     this.adjustThead();
+    this.adjustTfoot();
   }
 
   /**
@@ -439,6 +452,28 @@ class WalkontableTableRenderer {
         let sourceCol = this.columnFilter.renderedToSource(renderedColumnIndex);
 
         this.renderColumnHeader(i, sourceCol, TR.childNodes[renderedColumnIndex + this.rowHeaderCount]);
+      }
+    }
+  }
+
+  /**
+   * Renders the column headers
+   */
+  renderColumnFooters() {
+    let overlayName = this.wot.getOverlayName();
+
+    if (!this.columnFooterCount) {
+      return;
+    }
+    let columnCount = this.wtTable.getRenderedColumnsCount();
+
+    for (let i = 0; i < this.columnHeaderCount; i++) {
+      let TR = this.getTrForColumnFooters(i);
+
+      for (let renderedColumnIndex = (-1) * this.rowHeaderCount; renderedColumnIndex < columnCount; renderedColumnIndex++) {
+        let sourceCol = this.columnFilter.renderedToSource(renderedColumnIndex);
+
+        this.renderColumnFooter(i, sourceCol, TR.childNodes[renderedColumnIndex + this.rowHeaderCount]);
       }
     }
   }
@@ -501,11 +536,57 @@ class WalkontableTableRenderer {
   }
 
   /**
+   * Adjusts the number of TH elements in THEAD to match the number of headers and columns that need to be rendered
+   */
+  adjustTfoot() {
+    let columnCount = this.wtTable.getRenderedColumnsCount();
+    let TR = this.TFOOT.firstChild;
+
+    if (this.columnFooters.length) {
+      for (let i = 0, len = this.columnFooters.length; i < len; i++) {
+        TR = this.TFOOT.childNodes[i];
+
+        if (!TR) {
+          TR = document.createElement('TR');
+          this.TFOOT.appendChild(TR);
+        }
+        this.tbodyChildrenLength = TR.childNodes.length;
+
+        while (this.tbodyChildrenLength < columnCount + this.rowHeaderCount) {
+          TR.appendChild(document.createElement('TH'));
+          this.tbodyChildrenLength++;
+        }
+        while (this.tbodyChildrenLength > columnCount + this.rowHeaderCount) {
+          TR.removeChild(TR.lastChild);
+          this.tbodyChildrenLength--;
+        }
+      }
+      let tbodyChildrenLength = this.TFOOT.childNodes.length;
+
+      if (tbodyChildrenLength > this.columnFooters.length) {
+        for (let i = this.columnFooters.length; i < tbodyChildrenLength; i++) {
+          this.TFOOT.removeChild(this.TFOOT.lastChild);
+        }
+      }
+    } else if (TR) {
+      dom.empty(TR);
+    }
+  }
+
+  /**
    * @param {Number} index
    * @returns {HTMLTableCellElement}
    */
   getTrForColumnHeaders(index) {
     return this.THEAD.childNodes[index];
+  }
+
+  /**
+   * @param {Number} index
+   * @returns {HTMLTableCellElement}
+   */
+  getTrForColumnFooters(index) {
+    return this.TFOOT.childNodes[index];
   }
 
   /**
@@ -519,6 +600,19 @@ class WalkontableTableRenderer {
     TH.removeAttribute('style');
 
     return this.columnHeaders[row](col, TH, row);
+  }
+
+  /**
+   * @param {Number} row
+   * @param {Number} col
+   * @param {HTMLTableCellElement} TH
+   * @returns {*}
+   */
+  renderColumnFooter(row, col, TH) {
+    TH.className = '';
+    TH.removeAttribute('style');
+
+    return this.columnFooters[row](col, TH, row);
   }
 
   /**
